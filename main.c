@@ -70,9 +70,9 @@ int main(void)
     pspDebugScreenPrintf("            v0.5.4\n");
     pspDebugScreenPrintf("=================================\n\n");
 
-    /*-----------------------------
+    /*-----------------------------------------------------
         ネットワーク初期化
-    -----------------------------*/
+    -----------------------------------------------------*/
 
     pspDebugScreenPrintf("Initializing Network...\n");
 
@@ -88,13 +88,18 @@ int main(void)
             sceDisplayWaitVblankStart();
     }
 
+    pspDebugScreenPrintf("\n");
     pspDebugScreenPrintf("[OK] Network Initialized\n");
 
-    /* 接続状態表示 */
+    /*-----------------------------------------------------
+        接続状態表示
+    -----------------------------------------------------*/
 
     Network_PrintConnectionState();
 
-    /* Receiver初期化 */
+    /*-----------------------------------------------------
+        Receiver初期化
+    -----------------------------------------------------*/
 
     Receiver_Init();
 
