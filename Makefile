@@ -13,8 +13,7 @@ LIBS = \
 -lpspnet \
 -lpspnet_inet \
 -lpspnet_apctl \
--lpspnet_resolver \
--lpsputility
+-lpspnet_resolver
 
 EXTRA_TARGETS = EBOOT.PBP
 PSP_EBOOT_TITLE = 3DS File Managerv0.5.4
