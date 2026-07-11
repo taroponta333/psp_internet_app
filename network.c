@@ -27,11 +27,11 @@ int Network_Init(void)
     pspDebugScreenPrintf("sceNetInit()...\n");
 
     ret = sceNetInit(
-        128 * 1024,
-        42,
-        4 * 1024,
-        42,
-        4 * 1024);
+        0x20000,
+        0x20,
+        0x1000,
+        0x20,
+        0x1000);
 
     if(ret < 0)
     {
@@ -74,8 +74,8 @@ int Network_Init(void)
     pspDebugScreenPrintf("sceNetApctlInit()...\n");
 
     ret = sceNetApctlInit(
-        0x1800,
-        48);
+        0x1600,
+        0x42);
 
     if(ret < 0)
     {
