@@ -19,6 +19,13 @@ int Network_Init(void)
 {
     int ret;
 
+    pspDebugScreenPrintf("\n");
+    pspDebugScreenPrintf("=== Network Debug ===\n");
+
+    /* sceNetInit */
+
+    pspDebugScreenPrintf("sceNetInit()...\n");
+
     ret = sceNetInit(
         128 * 1024,
         42,
@@ -26,25 +33,59 @@ int Network_Init(void)
         42,
         4 * 1024);
 
-    if (ret < 0)
+    if(ret < 0)
+    {
+        pspDebugScreenPrintf("FAILED : 0x%08X\n", ret);
         return ret;
+    }
+
+    pspDebugScreenPrintf("OK\n");
+
+    /* sceNetInetInit */
+
+    pspDebugScreenPrintf("sceNetInetInit()...\n");
 
     ret = sceNetInetInit();
 
-    if (ret < 0)
+    if(ret < 0)
+    {
+        pspDebugScreenPrintf("FAILED : 0x%08X\n", ret);
         return ret;
+    }
+
+    pspDebugScreenPrintf("OK\n");
+
+    /* sceNetResolverInit */
+
+    pspDebugScreenPrintf("sceNetResolverInit()...\n");
 
     ret = sceNetResolverInit();
 
-    if (ret < 0)
+    if(ret < 0)
+    {
+        pspDebugScreenPrintf("FAILED : 0x%08X\n", ret);
         return ret;
+    }
+
+    pspDebugScreenPrintf("OK\n");
+
+    /* sceNetApctlInit */
+
+    pspDebugScreenPrintf("sceNetApctlInit()...\n");
 
     ret = sceNetApctlInit(
         0x1800,
         48);
 
-    if (ret < 0)
+    if(ret < 0)
+    {
+        pspDebugScreenPrintf("FAILED : 0x%08X\n", ret);
         return ret;
+    }
+
+    pspDebugScreenPrintf("OK\n");
+
+    pspDebugScreenPrintf("=== Network Init Success ===\n\n");
 
     return 0;
 }
@@ -69,7 +110,7 @@ int Network_IsConnected(void)
 {
     int state;
 
-    if (sceNetApctlGetState(&state) < 0)
+    if(sceNetApctlGetState(&state) < 0)
         return 0;
 
     return (state == 4);
@@ -83,15 +124,15 @@ void Network_PrintConnectionState(void)
 {
     int state = 0;
 
-    if (sceNetApctlGetState(&state) < 0)
+    if(sceNetApctlGetState(&state) < 0)
     {
-        pspDebugScreenPrintf("Network State : Unknown\n");
+        pspDebugScreenPrintf("State : Unknown\n");
         return;
     }
 
     pspDebugScreenPrintf("\n");
 
-    switch (state)
+    switch(state)
     {
         case 0:
             pspDebugScreenPrintf("Disconnected\n");
@@ -129,7 +170,7 @@ int Network_GetIP(char *ip)
 
     memset(&info, 0, sizeof(info));
 
-    if (sceNetApctlGetInfo(PSP_NET_APCTL_INFO_IP, &info) < 0)
+    if(sceNetApctlGetInfo(PSP_NET_APCTL_INFO_IP, &info) < 0)
         return -1;
 
     strcpy(ip, info.ip);
@@ -145,7 +186,7 @@ void Network_PrintIP(void)
 {
     char ip[16];
 
-    if (Network_GetIP(ip) < 0)
+    if(Network_GetIP(ip) < 0)
     {
         pspDebugScreenPrintf("IP : Unknown\n");
         return;
