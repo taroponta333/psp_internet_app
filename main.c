@@ -1,23 +1,50 @@
+/*
+ * =========================================================
+ * 3DS App Receiver v0.5.5
+ * Main Program
+ * PSPSDK Official Network Sample Based
+ * =========================================================
+ */
+
 #include <pspkernel.h>
 #include <pspdebug.h>
 #include <pspdisplay.h>
 #include <pspctrl.h>
 
+#include <pspsdk.h>
+#include <psputility.h>
+
 #include "network.h"
 #include "receiver.h"
 
-PSP_MODULE_INFO("3DS App Receiver", 0, 5, 4);
-PSP_MAIN_THREAD_ATTR(THREAD_ATTR_USER | THREAD_ATTR_VFPU);
+/*=========================================================
+    Module Information
+=========================================================*/
+
+PSP_MODULE_INFO("3DS App Receiver", 0, 5, 5);
+
+PSP_HEAP_THRESHOLD_SIZE_KB(1024);
+PSP_HEAP_SIZE_KB(-2048);
+
+PSP_MAIN_THREAD_ATTR(THREAD_ATTR_USER);
+PSP_MAIN_THREAD_STACK_SIZE_KB(1024);
 
 /*=========================================================
-    HOMEボタン対応
+    Exit Callback
 =========================================================*/
 
 int exit_callback(int arg1, int arg2, void *common)
 {
+    Network_Shutdown();
+
     sceKernelExitGame();
+
     return 0;
 }
+
+/*=========================================================
+    Callback Thread
+=========================================================*/
 
 int CallbackThread(SceSize args, void *argp)
 {
@@ -35,6 +62,10 @@ int CallbackThread(SceSize args, void *argp)
     return 0;
 }
 
+/*=========================================================
+    Setup Callback
+=========================================================*/
+
 int SetupCallbacks(void)
 {
     int thid;
@@ -44,77 +75,65 @@ int SetupCallbacks(void)
         CallbackThread,
         0x11,
         0xFA0,
-        0,
+        PSP_THREAD_ATTR_USER,
         NULL);
 
-    if (thid >= 0)
+    if(thid >= 0)
+    {
         sceKernelStartThread(thid, 0, NULL);
+    }
 
     return thid;
 }
 
 /*=========================================================
-    Main
+    Network Thread
 =========================================================*/
 
-int main(void)
+int NetworkThread(SceSize args, void *argp)
 {
     int ret;
 
-    SetupCallbacks();
-
-    pspDebugScreenInit();
-
     pspDebugScreenPrintf("=================================\n");
     pspDebugScreenPrintf("      3DS App Receiver\n");
-    pspDebugScreenPrintf("            v0.5.4\n");
+    pspDebugScreenPrintf("            v0.5.5\n");
     pspDebugScreenPrintf("=================================\n\n");
 
-    /*-----------------------------------------------------
-        ネットワーク初期化
-    -----------------------------------------------------*/
-
-    pspDebugScreenPrintf("Initializing Network...\n");
+    pspDebugScreenPrintf("Loading Network Modules...\n");
 
     ret = Network_Init();
 
-    if (ret < 0)
+    if(ret < 0)
     {
         pspDebugScreenPrintf("\n");
         pspDebugScreenPrintf("Network Init Failed!\n");
         pspDebugScreenPrintf("Error : 0x%08X\n", ret);
 
-        while (1)
+        while(1)
+        {
             sceDisplayWaitVblankStart();
+        }
     }
 
     pspDebugScreenPrintf("\n");
-    pspDebugScreenPrintf("[OK] Network Initialized\n");
-
-    /*-----------------------------------------------------
-        接続状態表示
-    -----------------------------------------------------*/
+    pspDebugScreenPrintf("[OK] Network Ready\n");
 
     Network_PrintConnectionState();
-
-    /*-----------------------------------------------------
-        Receiver初期化
-    -----------------------------------------------------*/
+    Network_PrintIP();
 
     Receiver_Init();
-
     pspDebugScreenPrintf("\n");
     pspDebugScreenPrintf("---------------------------------\n");
     pspDebugScreenPrintf("Waiting for 3DS...\n");
     pspDebugScreenPrintf("---------------------------------\n\n");
 
-    pspDebugScreenPrintf("HOME : Exit\n");
+    pspDebugScreenPrintf("HOME : Exit\n\n");
 
-    /*=====================================================
-        メインループ
-    =====================================================*/
+    /*=============================================
+        Main Loop
+    =============================================*/
 
-    while (1)
+    while(1)
     {
         Receiver_Update();
 
@@ -126,6 +145,68 @@ int main(void)
     Receiver_Shutdown();
 
     Network_Shutdown();
+
+    sceKernelExitDeleteThread(0);
+
+    return 0;
+}
+
+/*=========================================================
+    Main
+=========================================================*/
+
+int main(int argc, char *argv[])
+{
+    SceUID thid;
+
+    /* HOMEボタン */
+
+    SetupCallbacks();
+
+    /* Utility Module */
+
+    sceUtilityLoadNetModule(
+        PSP_NET_MODULE_COMMON);
+
+    sceUtilityLoadNetModule(
+        PSP_NET_MODULE_INET);
+
+    /* Debug Screen */
+
+    pspDebugScreenInit();
+
+    /*=============================================
+        Network Thread
+    =============================================*/
+
+    thid = sceKernelCreateThread(
+        "network_thread",
+        NetworkThread,
+        0x11,
+        256 * 1024,
+        PSP_THREAD_ATTR_USER,
+        NULL);
+
+    if(thid < 0)
+    {
+        pspDebugScreenPrintf(
+            "Thread Create Failed!\n");
+
+        sceKernelSleepThread();
+
+        return 0;
+    }
+
+    sceKernelStartThread(
+        thid,
+        0,
+        NULL);
+
+    /*=============================================
+        Main Thread End
+    =============================================*/
+
+    sceKernelExitDeleteThread(0);
 
     return 0;
 }
