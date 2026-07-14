@@ -253,3 +253,4 @@ if(state != 4)
 }
 
 return DIALOG_RESULT_OK;
+    }
