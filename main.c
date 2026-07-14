@@ -16,6 +16,7 @@
 
 #include "network.h"
 #include "receiver.h"
+#include "dialog.h"
 
 /*=========================================================
     Module Information
