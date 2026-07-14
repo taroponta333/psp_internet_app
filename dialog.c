@@ -19,130 +19,236 @@
 #include "dialog.h"
 
 /*=========================================================
-    Parameter
+    Dialog Result
 =========================================================*/
 
-static pspUtilityNetconfData netData;
+#define DIALOG_RESULT_RUNNING     1
+#define DIALOG_RESULT_OK          0
+#define DIALOG_RESULT_CANCEL     -1
+#define DIALOG_RESULT_ERROR      -2
 
 /*=========================================================
-    Initialize
+    NetConf Data
 =========================================================*/
 
-int Dialog_InitNetConfig(void)
+static pspUtilityNetconfData g_NetConf;
+
+/*=========================================================
+    Dialog Initialize
+=========================================================*/
+
+int Dialog_Init(void)
 {
-    memset(&netData, 0, sizeof(netData));
+    memset(&g_NetConf, 0, sizeof(g_NetConf));
 
-    netData.base.size = sizeof(netData);
+    g_NetConf.base.size = sizeof(g_NetConf);
 
-    netData.base.language =
+    g_NetConf.base.language =
         PSP_SYSTEMPARAM_LANGUAGE_JAPANESE;
 
-    netData.base.buttonSwap =
+    g_NetConf.base.buttonSwap =
         PSP_UTILITY_ACCEPT_CROSS;
 
-    netData.base.graphicsThread = 17;
-    netData.base.accessThread   = 19;
-    netData.base.fontThread     = 18;
-    netData.base.soundThread    = 16;
+    g_NetConf.base.graphicsThread = 17;
+    g_NetConf.base.accessThread   = 19;
+    g_NetConf.base.fontThread     = 18;
+    g_NetConf.base.soundThread    = 16;
 
-    netData.action =
+    g_NetConf.action =
         PSP_NETCONF_ACTION_CONNECTAP;
 
-    return sceUtilityNetconfInitStart(
-        &netData);
-}
+    pspDebugScreenPrintf(
+        "Starting Network Config Dialog...\n");
 
+    if(sceUtilityNetconfInitStart(&g_NetConf) < 0)
+    {
+        pspDebugScreenPrintf(
+            "sceUtilityNetconfInitStart FAILED\n");
+
+        return DIALOG_RESULT_ERROR;
+    }
+
+    return DIALOG_RESULT_RUNNING;
+}
 /*=========================================================
-    Update
+    Dialog Update
 =========================================================*/
 
-int Dialog_UpdateNetConfig(void)
+int Dialog_Update(void)
 {
-    switch(sceUtilityNetconfGetStatus())
+    int status;
+
+    status = sceUtilityNetconfGetStatus();
+
+    switch(status)
     {
+        /*-----------------------------------------
+            Visible
+        -----------------------------------------*/
+
         case PSP_UTILITY_DIALOG_VISIBLE:
 
             sceUtilityNetconfUpdate(1);
 
-            break;
+            return DIALOG_RESULT_RUNNING;
+
+        /*-----------------------------------------
+            Quit
+        -----------------------------------------*/
 
         case PSP_UTILITY_DIALOG_QUIT:
 
             sceUtilityNetconfShutdownStart();
 
-            break;
+            return DIALOG_RESULT_RUNNING;
+
+        /*-----------------------------------------
+            Finished
+        -----------------------------------------*/
+
+        case PSP_UTILITY_DIALOG_FINISHED:
+
+            return DIALOG_RESULT_OK;
+
+        /*-----------------------------------------
+            None
+        -----------------------------------------*/
 
         case PSP_UTILITY_DIALOG_NONE:
 
-            return 1;
+            return DIALOG_RESULT_OK;
+
+        /*-----------------------------------------
+            Init
+        -----------------------------------------*/
+
+        case PSP_UTILITY_DIALOG_INIT:
+
+            return DIALOG_RESULT_RUNNING;
+
+        /*-----------------------------------------
+            Unknown
+        -----------------------------------------*/
 
         default:
 
+            pspDebugScreenPrintf(
+                "Dialog Status : %d\n",
+                status);
+
+            return DIALOG_RESULT_RUNNING;
+    }
+}
+/*=========================================================
+    Dialog Shutdown
+=========================================================*/
+
+void Dialog_Shutdown(void)
+{
+    while(1)
+    {
+        int status;
+
+        status = sceUtilityNetconfGetStatus();
+
+        if(status == PSP_UTILITY_DIALOG_NONE)
+        {
             break;
+        }
+
+        if(status == PSP_UTILITY_DIALOG_QUIT)
+        {
+            sceUtilityNetconfShutdownStart();
+        }
+
+        if(status == PSP_UTILITY_DIALOG_VISIBLE)
+        {
+            sceUtilityNetconfUpdate(1);
+        }
+
+        sceDisplayWaitVblankStart();
+    }
+}
+
+/*=========================================================
+    Dialog Finished
+=========================================================*/
+
+int Dialog_Finished(void)
+{
+    if(sceUtilityNetconfGetStatus() ==
+        PSP_UTILITY_DIALOG_NONE)
+    {
+        return 1;
     }
 
     return 0;
 }
-
 /*=========================================================
-    Draw
-=========================================================*/
-
-void Dialog_Draw(void)
-{
-    sceDisplayWaitVblankStart();
-}
-
-/*=========================================================
-    Run Network Config Dialog
+    Show Network Config Dialog
 =========================================================*/
 
 int Dialog_ShowNetConfig(void)
 {
     int ret;
 
-    ret = Dialog_InitNetConfig();
+    /*-----------------------------------------
+        Initialize
+    -----------------------------------------*/
 
-    if(ret < 0)
+    ret = Dialog_Init();
+
+    if(ret != DIALOG_RESULT_RUNNING)
     {
-        pspDebugScreenPrintf(
-            "NetConf Init Failed : 0x%08X\n",
-            ret);
-
-        return ret;
+        return DIALOG_RESULT_ERROR;
     }
+
+    /*-----------------------------------------
+        Main Loop
+    -----------------------------------------*/
 
     while(1)
     {
-        if(Dialog_UpdateNetConfig())
-            break;
+        ret = Dialog_Update();
 
-        Dialog_Draw();
-    }
-
-    pspDebugScreenPrintf(
-        "NetConf Finished.\n");
-
-    return 0;
-}
-
-/*=========================================================
-    Shutdown
-=========================================================*/
-
-void Dialog_Shutdown(void)
-{
-    while(sceUtilityNetconfGetStatus()
-        != PSP_UTILITY_DIALOG_NONE)
-    {
-        if(sceUtilityNetconfGetStatus()
-            == PSP_UTILITY_DIALOG_QUIT)
+        if(ret == DIALOG_RESULT_OK)
         {
-            sceUtilityNetconfShutdownStart();
+            break;
         }
 
-        sceUtilityNetconfUpdate(1);
+        if(ret == DIALOG_RESULT_ERROR)
+        {
+            Dialog_Shutdown();
+
+            return DIALOG_RESULT_ERROR;
+        }
 
         sceDisplayWaitVblankStart();
     }
+
+    /*-----------------------------------------
+        Shutdown
+    -----------------------------------------*/
+
+    Dialog_Shutdown();
+
+    /*-----------------------------------------
+        Connection Check
+    -----------------------------------------*/
+
+    {
+        int state = 0;
+
+        if(sceNetApctlGetState(&state) < 0)
+        {
+            return DIALOG_RESULT_ERROR;
+        }
+
+        if(state != 4)
+        {
+            return DIALOG_RESULT_CANCEL;
+        }
+    }
+
+    return DIALOG_RESULT_OK;
 }
