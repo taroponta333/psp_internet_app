@@ -1,52 +1,36 @@
 /*
  * =========================================================
  * 3DS App Receiver v0.5.6
- * Dialog Header
+ * Network Header
  * Based on PSPSDK Official Samples
  * =========================================================
  */
 
-#ifndef __DIALOG_H__
-#define __DIALOG_H__
+#ifndef __NETWORK_H__
+#define __NETWORK_H__
 
 #include <pspkernel.h>
-#include <psputility.h>
-#include <psputility_netconf.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /*=========================================================
-    Dialog Result
+    Network
 =========================================================*/
 
-#define DIALOG_RESULT_RUNNING     1
-#define DIALOG_RESULT_OK          0
-#define DIALOG_RESULT_CANCEL     -1
-#define DIALOG_RESULT_ERROR      -2
+int Network_Init(void);
 
-/*=========================================================
-    Network Configuration Dialog
-=========================================================*/
+void Network_Shutdown(void);
 
-/* 初期化 */
-int Dialog_Init(void);
+void Network_PrintConnectionState(void);
 
-/* 更新 */
-int Dialog_Update(void);
+int Network_GetIP(char *ip);
 
-/* 終了処理 */
-void Dialog_Shutdown(void);
-
-/* 完了確認 */
-int Dialog_Finished(void);
-
-/* ネットワーク設定ダイアログ表示 */
-int Dialog_ShowNetConfig(void);
+void Network_PrintIP(void);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* __DIALOG_H__ */
+#endif /* __NETWORK_H__ */
