@@ -103,14 +103,6 @@ int Dialog_Update(void)
             return DIALOG_RESULT_RUNNING;
 
         /*-----------------------------------------
-            Finished
-        -----------------------------------------*/
-
-        case PSP_UTILITY_DIALOG_FINISHED:
-
-            return DIALOG_RESULT_OK;
-
-        /*-----------------------------------------
             None
         -----------------------------------------*/
 
@@ -161,10 +153,19 @@ void Dialog_Shutdown(void)
             sceUtilityNetconfShutdownStart();
         }
 
-        if(status == PSP_UTILITY_DIALOG_VISIBLE)
-        {
-            sceUtilityNetconfUpdate(1);
-        }
+        switch(status)
+{
+    case PSP_UTILITY_DIALOG_VISIBLE:
+        sceUtilityNetconfUpdate(1);
+        break;
+
+    case PSP_UTILITY_DIALOG_QUIT:
+        sceUtilityNetconfShutdownStart();
+        break;
+
+    case PSP_UTILITY_DIALOG_NONE:
+        return;
+}
 
         sceDisplayWaitVblankStart();
     }
@@ -244,11 +245,11 @@ int Dialog_ShowNetConfig(void)
             return DIALOG_RESULT_ERROR;
         }
 
-        if(state != 4)
-        {
-            return DIALOG_RESULT_CANCEL;
-        }
-    }
+pspDebugScreenPrintf("APCTL State : %d\n", state);
 
-    return DIALOG_RESULT_OK;
+if(state != 4)
+{
+    return DIALOG_RESULT_CANCEL;
 }
+
+return DIALOG_RESULT_OK;
