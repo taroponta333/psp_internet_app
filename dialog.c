@@ -9,7 +9,7 @@
 #include <pspkernel.h>
 #include <pspdebug.h>
 #include <pspdisplay.h>
-
+#include <pspnet_apctl.h>
 #include <psputility.h>
 #include <psputility_netconf.h>
 #include <psputility_sysparam.h>
