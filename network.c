@@ -1,8 +1,8 @@
 /*
  * =========================================================
- * 3DS App Receiver v0.5.5
+ * 3DS App Receiver v0.5.6
  * Network
- * Based on PSPSDK Official Network Sample
+ * Based on PSPSDK Official Sample
  * =========================================================
  */
 
@@ -30,7 +30,6 @@
 int Network_Init(void)
 {
     int ret;
-    int stateLast = -1;
 
     pspDebugScreenPrintf("\n");
     pspDebugScreenPrintf("=================================\n");
@@ -43,9 +42,19 @@ int Network_Init(void)
 
     pspDebugScreenPrintf("Load COMMON Module...\n");
 
-    ret = sceUtilityLoadNetModule(PSP_NET_MODULE_COMMON);
+    ret = sceUtilityLoadNetModule(
+        PSP_NET_MODULE_COMMON);
 
-    pspDebugScreenPrintf("Return : 0x%08X\n", ret);
+    if(ret < 0)
+    {
+        pspDebugScreenPrintf(
+            "FAILED : 0x%08X\n",
+            ret);
+
+        return ret;
+    }
+
+    pspDebugScreenPrintf("OK\n");
 
     /*-----------------------------------------
         Load INET Module
@@ -53,12 +62,22 @@ int Network_Init(void)
 
     pspDebugScreenPrintf("Load INET Module...\n");
 
-    ret = sceUtilityLoadNetModule(PSP_NET_MODULE_INET);
+    ret = sceUtilityLoadNetModule(
+        PSP_NET_MODULE_INET);
 
-    pspDebugScreenPrintf("Return : 0x%08X\n", ret);
+    if(ret < 0)
+    {
+        pspDebugScreenPrintf(
+            "FAILED : 0x%08X\n",
+            ret);
+
+        return ret;
+    }
+
+    pspDebugScreenPrintf("OK\n");
 
     /*-----------------------------------------
-        Official SDK Initialize
+        Initialize Network Library
     -----------------------------------------*/
 
     pspDebugScreenPrintf("pspSdkInetInit()...\n");
@@ -67,65 +86,23 @@ int Network_Init(void)
 
     if(ret < 0)
     {
-        pspDebugScreenPrintf("FAILED : 0x%08X\n", ret);
-        return ret;
-    }
-
-    pspDebugScreenPrintf("OK\n\n");
-
-    /*-----------------------------------------
-        Connect to Access Point
-    -----------------------------------------*/
-
-    pspDebugScreenPrintf("Connecting...\n");
-
-    ret = sceNetApctlConnect(1);
-
-    if(ret != 0)
-    {
         pspDebugScreenPrintf(
-            "sceNetApctlConnect : 0x%08X\n",
+            "FAILED : 0x%08X\n",
             ret);
 
         return ret;
     }
 
-    while(1)
-    {
-        int state;
+    pspDebugScreenPrintf("OK\n");
 
-        ret = sceNetApctlGetState(&state);
-
-        if(ret != 0)
-        {
-            pspDebugScreenPrintf(
-                "sceNetApctlGetState : 0x%08X\n",
-                ret);
-
-            return ret;
-        }
-
-        if(state > stateLast)
-        {
-            pspDebugScreenPrintf(
-                "Connection State : %d / 4\n",
-                state);
-
-            stateLast = state;
-        }
-
-        if(state == 4)
-            break;
-
-        sceKernelDelayThread(50 * 1000);
-    }
-
-    pspDebugScreenPrintf("Connected!\n\n");
+    pspDebugScreenPrintf("\n");
+    pspDebugScreenPrintf(
+        "Network Library Ready.\n\n");
 
     return 0;
 }
 /*=========================================================
-    Network Shutdown
+    Shutdown
 =========================================================*/
 
 void Network_Shutdown(void)
@@ -133,9 +110,15 @@ void Network_Shutdown(void)
     pspDebugScreenPrintf("\n");
     pspDebugScreenPrintf("Network Shutdown...\n");
 
+    /*-----------------------------------------
+        Terminate Network
+    -----------------------------------------*/
+
     pspSdkInetTerm();
 
-    /* Utility Modules */
+    /*-----------------------------------------
+        Unload Modules
+    -----------------------------------------*/
 
     sceUtilityUnloadNetModule(
         PSP_NET_MODULE_INET);
@@ -147,18 +130,17 @@ void Network_Shutdown(void)
 }
 
 /*=========================================================
-    Connection State
+    Print Connection State
 =========================================================*/
 
 void Network_PrintConnectionState(void)
 {
-    int state;
+    int state = 0;
 
     if(sceNetApctlGetState(&state) < 0)
     {
         pspDebugScreenPrintf(
             "Connection State : Unknown\n");
-
         return;
     }
 
@@ -166,32 +148,32 @@ void Network_PrintConnectionState(void)
     {
         case 0:
             pspDebugScreenPrintf(
-                "Connection : Disconnected\n");
+                "Connection State : Disconnected\n");
             break;
 
         case 1:
             pspDebugScreenPrintf(
-                "Connection : Scanning\n");
+                "Connection State : Scanning\n");
             break;
 
         case 2:
             pspDebugScreenPrintf(
-                "Connection : Connecting\n");
+                "Connection State : Connecting\n");
             break;
 
         case 3:
             pspDebugScreenPrintf(
-                "Connection : Getting IP\n");
+                "Connection State : Getting IP\n");
             break;
 
         case 4:
             pspDebugScreenPrintf(
-                "Connection : Connected\n");
+                "Connection State : Connected\n");
             break;
 
         default:
             pspDebugScreenPrintf(
-                "Connection : Unknown (%d)\n",
+                "Connection State : %d\n",
                 state);
             break;
     }
@@ -231,12 +213,25 @@ void Network_PrintIP(void)
     if(Network_GetIP(ip) < 0)
     {
         pspDebugScreenPrintf(
-            "IP : Unknown\n");
-
+            "IP Address : Unknown\n");
         return;
     }
 
     pspDebugScreenPrintf(
-        "IP : %s\n",
+        "IP Address : %s\n",
         ip);
+}
+
+/*=========================================================
+    Is Connected
+=========================================================*/
+
+int Network_IsConnected(void)
+{
+    int state;
+
+    if(sceNetApctlGetState(&state) < 0)
+        return 0;
+
+    return (state == 4);
 }
