@@ -109,6 +109,7 @@ int NetworkThread(SceSize args, void *argp)
 
     if(ret < 0)
     {
+        Dialog_ShowNetConfig();
         pspDebugScreenPrintf("\n");
         pspDebugScreenPrintf("Network Init Failed!\n");
         pspDebugScreenPrintf("Error : 0x%08X\n", ret);
