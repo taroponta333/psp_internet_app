@@ -237,7 +237,7 @@ int Dialog_ShowNetConfig(void)
         Connection Check
     -----------------------------------------*/
 
-    {
+        {
         int state = 0;
 
         if(sceNetApctlGetState(&state) < 0)
@@ -245,12 +245,13 @@ int Dialog_ShowNetConfig(void)
             return DIALOG_RESULT_ERROR;
         }
 
-pspDebugScreenPrintf("APCTL State : %d\n", state);
+        pspDebugScreenPrintf("APCTL State : %d\n", state);
 
-if(state != 4)
-{
-    return DIALOG_RESULT_CANCEL;
-}
-
-return DIALOG_RESULT_OK;
+        if(state != 4)
+        {
+            return DIALOG_RESULT_CANCEL;
+        }
     }
+
+    return DIALOG_RESULT_OK;
+}
